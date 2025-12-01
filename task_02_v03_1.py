@@ -4,6 +4,7 @@ import subprocess
 import os
 from typing import List, Tuple
 
+# Спроба імпорту matplotlib, якщо немає — встановлюємо автоматично
 try:
     import matplotlib.pyplot as plt
 except ImportError:
@@ -13,7 +14,7 @@ except ImportError:
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "matplotlib>=3.5.0"],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         import matplotlib.pyplot as plt
         print("✓ matplotlib успішно встановлений\n")
@@ -65,9 +66,20 @@ def koch_segment(
     koch_segment(xD, yD, xE, yE, level - 1, lines)
 
 
-def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
+def draw_koch_snowflake(
+    level: int,
+    show_in_window: bool,
+    save_to_file: bool = True,
+) -> None:
     """
     Будує сніжинку Коха для заданого рівня рекурсії.
+
+    show_in_window:
+        True  — показати в графічному вікні (UI),
+        False — не показувати, тільки зберегти у файл (якщо save_to_file = True).
+
+    save_to_file:
+        True  — зберегти PNG у папку OUTPUT_DIR.
     """
     lines: List[Line] = []
 
@@ -81,8 +93,8 @@ def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
     koch_segment(xB, yB, xC, yC, level, lines)
     koch_segment(xC, yC, xA, yA, level, lines)
 
-    xs = []
-    ys = []
+    xs: List[float] = []
+    ys: List[float] = []
     for x1, y1, x2, y2 in lines:
         xs.extend([x1, x2])
         ys.extend([y1, y2])
@@ -93,7 +105,7 @@ def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
     for x1, y1, x2, y2 in lines:
         plt.plot([x1, x2], [y1, y2], color="b")
 
-    # Заливка (опціонально, щоб було красиво)
+    # Заливка для наочності
     plt.fill(xs, ys, color="c", alpha=0.2)
 
     plt.axis("equal")
@@ -102,34 +114,53 @@ def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
     plt.ylabel("Y")
     plt.grid(True, alpha=0.2)
 
-    plt.show()
-
+    # 1) Спочатку — збереження у файл (якщо потрібно)
+    filename = None
     if save_to_file:
-        # Створюємо папку, якщо вона не існує
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         filename = os.path.join(OUTPUT_DIR, f"koch_snowflake_level_{level}.png")
-        plt.savefig(filename, dpi=150, bbox_inches='tight')
+        plt.savefig(filename, dpi=150, bbox_inches="tight")
         print(f"Графік збережено в файл: {filename}")
-        plt.close()
-    else:
+
+    # 2) Потім — вивід у вікно (якщо потрібно)
+    if show_in_window:
         try:
             plt.show()
         except Exception as e:
             print(f"Не можу відобразити графічне вікно: {e}")
-            os.makedirs(OUTPUT_DIR, exist_ok=True)
-            filename = os.path.join(OUTPUT_DIR, f"koch_snowflake_level_{level}.png")
-            plt.savefig(filename, dpi=150, bbox_inches='tight')
-            print(f"Графік збережено в файл: {filename}")
+            if filename is None and save_to_file:
+                # Теоретично не має статись, але на всяк випадок
+                print("Зображення не вдалося показати, але воно збережене у файл.")
+    else:
+        # Якщо вікно не показуємо — одразу закриваємо фігуру
+        plt.close()
 
 
 def main() -> None:
     """
-    Запитує у користувача рівень рекурсії та малює сніжинку Коха.
-    Працює в циклі, поки користувач не натисне Enter без введення числа.
+    Запитує у користувача режим виводу (файл / вікно),
+    потім у циклі — рівень рекурсії та малює сніжинку Коха.
     """
+
+    # Вибір режиму виводу: 0 — тільки файл, 1 — файл + вікно
+    while True:
+        mode_str = input(
+            "Оберіть режим виводу:\n"
+            "  0 — тільки збереження у файл\n"
+            "  1 — збереження у файл та показ у вікні\n"
+            "Ваш вибір (0 або 1): "
+        ).strip()
+
+        if mode_str in ("0", "1"):
+            show_in_window = (mode_str == "1")
+            break
+
+        print("Потрібно ввести 0 або 1. Спробуйте ще раз.\n")
+
+    # Основний цикл: запитуємо рівень рекурсії, поки користувач не натисне Enter
     while True:
         level_str = input(
-            "Введіть рівень рекурсії (ціле число від 0 до 7)\n"
+            "\nВведіть рівень рекурсії (ціле число від 0 до 7)\n"
             "Або натисніть Enter без введення, щоб вийти: "
         )
 
@@ -141,16 +172,16 @@ def main() -> None:
         try:
             level = int(level_str)
         except ValueError:
-            print("Потрібно ввести ціле число. Спробуйте ще раз.\n")
+            print("Потрібно ввести ціле число. Спробуйте ще раз.")
             continue
 
         if level < 0 or level > 7:
-            print("Рівень рекурсії має бути від 0 до 7. Спробуйте ще раз.\n")
+            print("Рівень рекурсії має бути від 0 до 7. Спробуйте ще раз.")
             continue
 
         print(f"Генерую сніжинку Коха з рівнем рекурсії {level}...")
-        draw_koch_snowflake(level, save_to_file=True)
-        print()  # Порожній рядок для зручності виводу
+        draw_koch_snowflake(level, show_in_window=show_in_window, save_to_file=True)
+
 
 if __name__ == "__main__":
     main()
