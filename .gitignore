@@ -205,3 +205,7 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Generated output folders and mock data
+task_02_koch_snowflake/
+mock_data/

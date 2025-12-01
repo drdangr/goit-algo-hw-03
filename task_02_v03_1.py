@@ -1,9 +1,29 @@
 import math
+import sys
+import subprocess
+import os
 from typing import List, Tuple
 
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    print("Помилка: matplotlib не встановлений.")
+    print("Встановлюю matplotlib...")
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "matplotlib>=3.5.0"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        import matplotlib.pyplot as plt
+        print("✓ matplotlib успішно встановлений\n")
+    except Exception as e:
+        print(f"✗ Не вдалося встановити matplotlib: {e}")
+        print("Спробуйте встановити вручну: pip install matplotlib")
+        sys.exit(1)
 
 Line = Tuple[float, float, float, float]
+OUTPUT_DIR = "task_02_koch_snowflake"
 
 
 def koch_segment(
@@ -85,7 +105,9 @@ def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
     plt.show()
 
     if save_to_file:
-        filename = f"koch_snowflake_level_{level}.png"
+        # Створюємо папку, якщо вона не існує
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        filename = os.path.join(OUTPUT_DIR, f"koch_snowflake_level_{level}.png")
         plt.savefig(filename, dpi=150, bbox_inches='tight')
         print(f"Графік збережено в файл: {filename}")
         plt.close()
@@ -94,7 +116,8 @@ def draw_koch_snowflake(level: int, save_to_file: bool = True) -> None:
             plt.show()
         except Exception as e:
             print(f"Не можу відобразити графічне вікно: {e}")
-            filename = f"koch_snowflake_level_{level}.png"
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            filename = os.path.join(OUTPUT_DIR, f"koch_snowflake_level_{level}.png")
             plt.savefig(filename, dpi=150, bbox_inches='tight')
             print(f"Графік збережено в файл: {filename}")
 
